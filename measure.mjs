@@ -17,6 +17,7 @@ function decodePng(path) {
   let width = 0;
   let height = 0;
   let colorType = 0;
+  let bitDepth = 8;
   const data = [];
   while (offset < bytes.length) {
     const length = bytes.readUInt32BE(offset);
@@ -25,9 +26,9 @@ function decodePng(path) {
     if (type === 'IHDR') {
       width = chunk.readUInt32BE(0);
       height = chunk.readUInt32BE(4);
-      const bitDepth = chunk[8];
+      bitDepth = chunk[8];
       colorType = chunk[9];
-      if (bitDepth !== 8 || (colorType !== 2 && colorType !== 6) || chunk[12] !== 0) {
+      if ((bitDepth !== 8 && bitDepth !== 16) || (colorType !== 2 && colorType !== 6) || chunk[12] !== 0) {
         throw new Error(`unsupported PNG: bit depth ${bitDepth}, colour type ${colorType}, interlace ${chunk[12]}`);
       }
     } else if (type === 'IDAT') {
@@ -35,7 +36,9 @@ function decodePng(path) {
     }
     offset += 12 + length;
   }
-  const channels = colorType === 6 ? 4 : 3;
+  // devicectl writes 16-bit screenshots, adb 8-bit ones; filters work on bytes either way.
+  const bytesPerSample = bitDepth / 8;
+  const channels = (colorType === 6 ? 4 : 3) * bytesPerSample;
   const raw = inflateSync(Buffer.concat(data));
   const stride = width * channels;
   const pixels = Buffer.alloc(height * stride);
@@ -65,7 +68,7 @@ function decodePng(path) {
     height,
     at: (x, y) => {
       const start = y * stride + x * channels;
-      return [pixels[start], pixels[start + 1], pixels[start + 2]];
+      return [0, 1, 2].map(sample => pixels[start + sample * bytesPerSample]);
     },
   };
 }

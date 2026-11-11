@@ -17,7 +17,7 @@ if ! macos="$(sw_vers -productVersion)" || ! xcode="$(xcodebuild -version | tr '
     echo "SUMMARY: a tool the run needs is missing, or devicectl does not list ${device}"
     exit 2
 fi
-model="$(sed -E 's/.*(iPhone|iPad)([^)]*\)).*/\1\2/' <<<"${device_line}")"
+model="$(sed -E 's/ {2,}/|/g' <<<"${device_line}" | cut -d '|' -f 4)"
 echo "macOS ${macos}; ${xcode}; node ${node_version}; pod ${pod_version}; device ${model}"
 
 echo "\$ yarn install --frozen-lockfile"
