@@ -1,79 +1,27 @@
 # rn-radial-gradient-length-stops
 
-![Build](https://github.com/YevheniiKotyrlo/rn-radial-gradient-length-stops/workflows/Pre%20Merge%20Checks/badge.svg)
+React Native's radial gradient measures a length colour stop against `max(radiusX, radiusY)`, where CSS Images 4 measures it along the gradient ray, whose length is the ellipse's horizontal radius. On an ellipse taller than it is wide, every length stop lands nearer the centre than CSS puts it.
 
-This is your new React Native Reproducer project.
+Made from React Native's reproducer template, on `react-native@0.90.0-nightly-20261111-1273ca128`. `ReproducerApp/App.tsx` centres one 100 × 300 box on a white screen with
 
-# Reproducer TODO list
-
-- [x] 1. Create a new reproducer project.
-- [ ] 2. Git clone your repository locally.
-- [ ] 3. Edit the project to reproduce the failure you're seeing.
-- [ ] 4. Push your changes, so that Github Actions can run the CI.
-- [ ] 5. Make sure the repository is public and share the link with the issue you reported.
-
-# How to use this Reproducer
-
-This project has been created with `npx @react-native-community/cli init` and is a vanilla React Native app.
-
-> [!IMPORTANT]  
-> Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/set-up-your-environment) so that you have a working environment locally.
-
-## Step 1: Start the Metro Server
-
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
-
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+```ts
+backgroundImage: 'radial-gradient(ellipse 50px 150px at center, red 40px, blue 40px)'
 ```
 
-## Step 2: Start your Application
+CSS turns the red to blue 40 right of the centre and 120 below it; measured against `max(50, 150)`, the stop is 40 / 150 of the ellipse, 13.3 right of the centre and 40 below it.
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+## Steps
 
-### For Android
+Android, with a device on adb (`ANDROID_SERIAL` picks one):
 
-```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+```sh
+./reproduce-android.sh
 ```
 
-### For iOS
+iOS, on a Mac with an iPhone or iPad that `xcrun devicectl list devices` lists:
 
-First, make sure you install dependencies with:
-
-```bash
-cd ios && bundle install && bundle exec pod install
+```sh
+DEVELOPMENT_TEAM=<your team> ./reproduce-ios.sh <device identifier>
 ```
 
-Then you can run the iOS app with:
-
-```bash
-# using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+Each builds the app in Release, installs and launches it, takes a screenshot and runs `node measure.mjs screenshot.png`, which finds the box by its red and blue pixels and measures, in the box's own units, where the red turns blue rightwards and downwards from its centre. They exit 1 while the stop lands where `max(radiusX, radiusY)` puts it, 0 once it lands where CSS puts it, and 2 when a step fails or the stop lands elsewhere.
